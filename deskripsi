@@ -1,0 +1,128 @@
+Arisanku.com
+Platform Arisan Digital Aman, Transparan, dan Legal
+Deskripsi Singkat
+
+Arisanku.com adalah platform SaaS arisan digital yang membantu komunitas, organisasi, dan individu mengelola arisan secara aman, transparan, dan terstruktur, dengan dukungan payment gateway Mitrans Positif (Midtrans).
+Platform ini dirancang non-custodial, artinya tidak menghimpun dana, sehingga aman secara hukum dan dapat diaudit.
+
+Masalah yang Diselesaikan
+
+Arisan manual rawan penipuan & konflik
+
+Pembayaran tidak transparan
+
+Sulit memastikan semua anggota sudah bayar
+
+Admin bisa menyalahgunakan dana
+
+Tidak ada bukti & audit trail
+
+Solusi Arisanku.com
+
+Semua anggota wajib bayar dulu
+
+Undian hanya bisa dilakukan jika pembayaran 100% lengkap
+
+Dana ditangani oleh payment gateway (Midtrans), bukan admin atau platform
+
+Semua aktivitas tercatat & tidak bisa dimanipulasi
+
+Peran & Role Pengguna
+1. Super Admin (Owner SaaS)
+
+Pemilik platform Arisanku.com
+
+Menyediakan layanan sistem & infrastruktur
+
+Menerima 5% fee layanan SaaS
+
+Tidak ikut arisan, tidak mengelola dana
+
+2. Admin Arisan (Pengelola)
+
+Membuat & mengelola grup arisan
+
+Mengundang peserta
+
+Menjalankan undian (setelah pembayaran lengkap)
+
+Mendapat 5% fee jasa pengelolaan
+
+❌ Tidak bisa menaikkan fee (tetap & sistemik)
+
+3. User (Peserta Arisan)
+
+Wajib memiliki rekening sejak pendaftaran
+
+Membayar iuran tiap periode
+
+Bisa menjadi pemenang arisan (termasuk admin)
+
+Model Fee (Tetap & Transparan)
+
+Total potongan 10% dari total dana arisan, terdiri dari:
+
+5% → Fee SaaS untuk Super Admin (Arisanku.com)
+
+5% → Fee jasa pengelolaan untuk Admin Arisan
+
+📌 Fee tidak bisa diubah, tidak berbasis keuntungan, dan bukan bunga.
+
+Alur Sistem (Ringkas)
+
+Admin membuat Form Arisan
+(nama arisan, nilai iuran, mingguan/bulanan, jumlah peserta, jumlah putaran)
+
+User bergabung & membayar iuran via Midtrans (QRIS / VA)
+
+Dana dikumpulkan di Midtrans
+
+Jika belum lengkap → sistem LOCK
+
+Tidak bisa undi
+
+Setelah pembayaran 100%:
+
+Admin melakukan undian
+
+Pemenang ditentukan sistem
+
+Midtrans melakukan settlement otomatis:
+
+90% → Rekening pemenang
+
+5% → Super Admin (SaaS)
+
+5% → Admin pengelola
+
+Keamanan & Anti Fraud
+
+Semua user wajib input rekening sejak awal
+
+Rekening aktif otomatis saat user menang
+
+Rekening dikunci setelah cycle pertama
+
+Jika user tidak pernah menang → rekening editable kembali
+
+Sistem menolak payout ke rekening lain
+
+Kepatuhan & Legal
+
+Platform tidak menyimpan dana
+
+Tidak ada janji keuntungan
+
+Fee adalah jasa layanan
+
+Semua transaksi tercatat (audit trail)
+
+Cocok dengan hukum perdata & praktik fintech Indonesia
+
+Nilai Utama Arisanku.com
+
+✅ Aman
+✅ Transparan
+✅ Anti manipulasi
+✅ Legal-aware
+✅ Siap scale sebagai SaaS
