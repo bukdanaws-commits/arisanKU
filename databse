@@ -1,0 +1,235 @@
+2️⃣ ENUM TYPES (WAJIB DIEKSEKUSI DULU)
+-- role user
+CREATE TYPE user_role AS ENUM (
+  'super_admin',
+  'admin',
+  'user'
+);
+
+-- status form arisan
+CREATE TYPE arisan_form_status AS ENUM (
+  'draft',
+  'published',
+  'archived'
+);
+
+-- status arisan berjalan
+CREATE TYPE arisan_group_status AS ENUM (
+  'active',
+  'completed',
+  'cancelled'
+);
+
+-- status cycle
+CREATE TYPE arisan_cycle_status AS ENUM (
+  'waiting_payment',
+  'ready_for_draw',
+  'drawn',
+  'settled'
+);
+
+-- metode undian
+CREATE TYPE draw_method AS ENUM (
+  'random',
+  'ordered'
+);
+
+-- status pembayaran
+CREATE TYPE payment_status AS ENUM (
+  'pending',
+  'paid',
+  'settled',
+  'failed'
+);
+
+-- status rekening user
+CREATE TYPE payout_account_status AS ENUM (
+  'registered',
+  'active',
+  'locked'
+);
+
+3️⃣ TABEL INTI (DDL SUPABASE)
+👤 users_profile
+CREATE TABLE users_profile (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  role user_role NOT NULL DEFAULT 'user',
+  full_name text NOT NULL,
+  created_at timestamp with time zone DEFAULT now()
+);
+
+🏦 user_bank_accounts
+CREATE TABLE user_bank_accounts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid UNIQUE REFERENCES users_profile(id) ON DELETE CASCADE,
+  bank_name text NOT NULL,
+  account_number text NOT NULL,
+  account_holder text NOT NULL,
+  beneficiary_ref text,
+  payout_status payout_account_status DEFAULT 'registered',
+  created_at timestamp with time zone DEFAULT now(),
+  verified_at timestamp with time zone
+);
+
+
+📌 1 user = 1 rekening
+
+📄 arisan_forms (FORM / SETUP)
+CREATE TABLE arisan_forms (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  arisan_name text NOT NULL,
+  created_by uuid REFERENCES users_profile(id),
+  description text,
+  start_date date NOT NULL,
+  frequency text CHECK (frequency IN ('weekly','monthly')),
+  total_cycles int NOT NULL,
+  member_limit int NOT NULL,
+  contribution_amount numeric NOT NULL,
+  currency text DEFAULT 'IDR',
+  draw_method draw_method NOT NULL,
+  platform_fee_percent numeric DEFAULT 5,
+  admin_fee_percent numeric DEFAULT 5,
+  status arisan_form_status DEFAULT 'draft',
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
+);
+
+
+⚠️ Fee HARDCODE LOGIC, admin tidak bisa ubah
+
+🧩 arisan_groups (INSTANCE BERJALAN)
+CREATE TABLE arisan_groups (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  form_id uuid REFERENCES arisan_forms(id),
+  admin_id uuid REFERENCES users_profile(id),
+  current_cycle int DEFAULT 1,
+  status arisan_group_status DEFAULT 'active',
+  activated_at timestamp with time zone DEFAULT now(),
+  completed_at timestamp with time zone
+);
+
+👥 arisan_members
+CREATE TABLE arisan_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id uuid REFERENCES arisan_groups(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES users_profile(id) ON DELETE CASCADE,
+  join_order int NOT NULL,
+  status text DEFAULT 'active',
+  joined_at timestamp with time zone DEFAULT now(),
+  UNIQUE (group_id, user_id)
+);
+
+🔁 arisan_cycles
+CREATE TABLE arisan_cycles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id uuid REFERENCES arisan_groups(id) ON DELETE CASCADE,
+  cycle_number int NOT NULL,
+  status arisan_cycle_status DEFAULT 'waiting_payment',
+  scheduled_at date,
+  created_at timestamp with time zone DEFAULT now(),
+  UNIQUE (group_id, cycle_number)
+);
+
+🎲 arisan_draws
+CREATE TABLE arisan_draws (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cycle_id uuid REFERENCES arisan_cycles(id) ON DELETE CASCADE,
+  winner_user_id uuid REFERENCES users_profile(id),
+  draw_method draw_method NOT NULL,
+  draw_hash text NOT NULL,
+  triggered_by uuid REFERENCES users_profile(id),
+  created_at timestamp with time zone DEFAULT now()
+);
+
+
+📌 Tidak boleh UPDATE / DELETE (nanti via RLS & trigger)
+
+💰 payments
+CREATE TABLE payments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cycle_id uuid REFERENCES arisan_cycles(id),
+  payer_id uuid REFERENCES users_profile(id),
+  gross_amount numeric NOT NULL,
+  platform_fee numeric NOT NULL,
+  admin_fee numeric NOT NULL,
+  net_amount numeric NOT NULL,
+  gateway_ref text,
+  status payment_status DEFAULT 'pending',
+  paid_at timestamp with time zone
+);
+
+
+📌 receiver ditentukan saat settlement
+
+🧾 platform_fees (5% SAAS)
+CREATE TABLE platform_fees (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  payment_id uuid REFERENCES payments(id),
+  amount numeric NOT NULL,
+  created_at timestamp with time zone DEFAULT now()
+);
+
+🧾 admin_fees (5% PENGELOLA)
+CREATE TABLE admin_fees (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  payment_id uuid REFERENCES payments(id),
+  admin_id uuid REFERENCES users_profile(id),
+  amount numeric NOT NULL,
+  created_at timestamp with time zone DEFAULT now()
+);
+
+📩 invitations
+CREATE TABLE invitations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id uuid REFERENCES arisan_groups(id),
+  invited_email text,
+  invited_by uuid REFERENCES users_profile(id),
+  token text UNIQUE NOT NULL,
+  status text DEFAULT 'sent',
+  created_at timestamp with time zone DEFAULT now()
+);
+
+🧠 activity_logs
+CREATE TABLE activity_logs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_id uuid,
+  action text,
+  target_type text,
+  target_id uuid,
+  created_at timestamp with time zone DEFAULT now()
+);
+
+🌐 webhook_logs
+CREATE TABLE webhook_logs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  gateway text,
+  payload jsonb,
+  is_verified boolean DEFAULT false,
+  received_at timestamp with time zone DEFAULT now()
+);
+
+4️⃣ CATATAN PENTING SEBELUM EXECUTE
+
+⚠️ Jalankan berurutan:
+
+ENUM
+
+users_profile
+
+user_bank_accounts
+
+arisan_forms → dst
+
+⚠️ Supabase:
+
+Aktifkan pgcrypto (untuk gen_random_uuid)
+
+RLS BELUM DINYALAKAN dulu
+
+5️⃣ STATUS SEKARANG (LOCKED ✅)
+
+✔️ Flow payment sudah fix
+✔️ Fee 10% fix & tidak bisa dimanipulasi
+✔️ Admin = user (aman)
+✔️ Rekening binding aman
+✔️ Schema siap di-Supabase
